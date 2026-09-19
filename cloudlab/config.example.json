@@ -1,0 +1,29 @@
+{
+  "type": "status_change",
+  "status": "configuring",
+  "mem": {},
+  "nodes": [
+    {
+      "name": "host1",
+      "ssh_hostname": "HOST1_SSH_NAME",
+      "worker": {"host": "HOST1_PRIVATE_IP", "port": 1091},
+      "index_shipper": {"host": "HOST1_PRIVATE_IP", "port": 43411}
+    },
+    {
+      "name": "host2",
+      "ssh_hostname": "HOST2_SSH_NAME",
+      "worker": {"host": "HOST2_PRIVATE_IP", "port": 1091},
+      "index_shipper": {"host": "HOST2_PRIVATE_IP", "port": 43411}
+    },
+    {
+      "name": "host3",
+      "ssh_hostname": "HOST3_SSH_NAME",
+      "worker": {"host": "HOST3_PRIVATE_IP", "port": 1091},
+      "index_shipper": {"host": "HOST3_PRIVATE_IP", "port": 43411}
+    }
+  ],
+  "controller": {
+    "http_port": 8666,
+    "rpc_port": 3148
+  }
+}

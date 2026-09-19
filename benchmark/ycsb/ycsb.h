@@ -1,6 +1,7 @@
 #ifndef YCSB_H
 #define YCSB_H
 
+#include <algorithm>
 #include "table_decl.h"
 #include "epoch.h"
 #include "slice.h"
@@ -44,6 +45,16 @@ class Client : public felis::EpochClient {
   static int g_contention_key;
   static bool g_dependency;
 
+  static int NodeForKey(uint64_t key) {
+    auto nr_nodes = util::Instance<felis::NodeConfiguration>().nr_nodes();
+    // Invert the loader's half-open ranges exactly. The loader begins node i
+    // at floor(i * table_size / nr_nodes), so a plain floor(key * n / size)
+    // misroutes boundary keys whenever the size is not divisible by n.
+    auto node = static_cast<int>(
+        ((key + 1) * nr_nodes + g_table_size - 1) / g_table_size);
+    return std::min(node, nr_nodes);
+  }
+
   Client() noexcept;
   unsigned int LoadPercentage() final override { return 100; }
   felis::BaseTxn *CreateTxn(uint64_t serial_id) final override;
@@ -65,7 +76,9 @@ namespace felis {
 
 using namespace ycsb;
 
-SHARD_TABLE(Ycsb) { return 0; }
+// One slice per database node. Keys are range-partitioned identically by the
+// loader, index lookup router, and execution-piece router.
+SHARD_TABLE(Ycsb) { return ycsb::Client::NodeForKey(key.k) - 1; }
 
 }
 

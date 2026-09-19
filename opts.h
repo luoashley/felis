@@ -84,6 +84,7 @@ struct Options {
   static inline const auto kYcsbContentionKey = Option("YcsbContentionKey");
   static inline const auto kYcsbSkewFactor = Option("YcsbSkewFactor");
   static inline const auto kYcsbReadOnly = Option("YcsbReadOnly");
+  static inline const auto kYcsbTableSize = Option("YcsbTableSize");
   static inline const auto kYcsbDependency = Option("YcsbDependency", false);
 
   static inline const auto kEnableGranola = Option("EnableGranola", false);

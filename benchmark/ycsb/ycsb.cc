@@ -11,9 +11,9 @@ using namespace felis;
 static constexpr int kTotal = 10;
 static constexpr int kNrMSBContentionKey = 6;
 
-class DummySliceRouter {
+class YcsbSliceRouter {
  public:
-  static int SliceToNodeId(int16_t slice_id) { return 1; } // Always on node 1
+  static int SliceToNodeId(int16_t slice_id) { return slice_id + 1; }
 };
 
 
@@ -103,8 +103,7 @@ void RMWTxn::Prepare()
     for (int i = 0; i < kTotal; i++) dbk[i].k = keys[i];
     INIT_ROUTINE_BRK(8192);
 
-    // Omit the return value because this workload is totally single node
-    TxnIndexLookup<DummySliceRouter, RMWState::LookupCompletion, void>(
+    TxnIndexLookup<YcsbSliceRouter, RMWState::LookupCompletion, void>(
         nullptr,
         KeyParam<Ycsb>(dbk, kTotal));
   } else {
@@ -126,8 +125,9 @@ void RMWTxn::Prepare()
     }
     RunOnPartition(
         [this](auto part, auto root, const auto &t) {
+          auto [_k, i, _state, _handle, _part] = t;
           root->AttachRoutine(
-              t, 1, // Always on the local node.
+              t, Client::NodeForKey(keys[i]),
               [](auto &ctx) {
                 auto [k, i, state, handle, part] = ctx;
                 LookupIndex(k, i, state, handle);
@@ -200,8 +200,9 @@ void RMWTxn::Run()
   } else if (Client::g_enable_granola || Client::g_enable_pwv) {
     RunOnPartition(
         [this](auto part, auto root, const auto &t) {
+          auto [_k, i, _state, _handle, _part] = t;
           root->AttachRoutine(
-              t, 1,
+              t, Client::NodeForKey(keys[i]),
               [](auto &ctx) {
                 auto &[k, i, state, handle, _part] = ctx;
 
@@ -242,7 +243,7 @@ void RMWTxn::Run()
           if (i == kTotal - Client::g_extra_read) {
             // All reads here
             root->AttachRoutine(
-                t, 1,
+                t, Client::NodeForKey(keys[i]),
                 [](auto &ctx) {
                   auto [k, i, state, handle, _part] = ctx;
 
@@ -252,7 +253,7 @@ void RMWTxn::Run()
                 });
           } else {
             root->AttachRoutine(
-                t, 1,
+                t, Client::NodeForKey(keys[i]),
                 [](auto &ctx) {
                   auto [k, i, state, handle, _part] = ctx;
                   // Last write
@@ -282,6 +283,10 @@ void YcsbLoader::Run()
   void *buf = alloca(512);
 
   auto nr_threads = NodeConfiguration::g_nr_threads;
+  auto &conf = util::Instance<NodeConfiguration>();
+  auto node_index = static_cast<unsigned long>(conf.node_id() - 1);
+  auto node_start = node_index * Client::g_table_size / conf.nr_nodes();
+  auto node_end = (node_index + 1) * Client::g_table_size / conf.nr_nodes();
   for (auto t = 0; t < nr_threads; t++) {
     printf("t = %d\n", t);
     MasstreeIndex::ResetThreadInfo();
@@ -291,8 +296,8 @@ void YcsbLoader::Run()
     info.set_affinity(t);
     info.Pin();
 
-    unsigned long start = t * Client::g_table_size / nr_threads;
-    unsigned long end = (t + 1) * Client::g_table_size / nr_threads;
+    unsigned long start = node_start + t * (node_end - node_start) / nr_threads;
+    unsigned long end = node_start + (t + 1) * (node_end - node_start) / nr_threads;
 
     for (unsigned long i = start; i < end; i++) {
       Ycsb::Key dbk;

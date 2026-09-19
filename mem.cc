@@ -221,7 +221,10 @@ static SlabMemory *g_slabmem;
 
 void InitSlab(size_t memsz)
 {
-  auto nr_numa_nodes = ParallelAllocationPolicy::g_nr_cores / kNrCorePerNode;
+  // Small CloudLab machines can expose fewer cores than kNrCorePerNode.
+  // Use ceiling division so an 8-core d710 still receives one NUMA slab.
+  auto nr_numa_nodes =
+      (ParallelAllocationPolicy::g_nr_cores - 1) / kNrCorePerNode + 1;
   g_slabmem = new SlabMemory[nr_numa_nodes];
   memsz /= nr_numa_nodes;
 

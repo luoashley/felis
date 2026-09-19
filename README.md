@@ -1,5 +1,8 @@
 # Papers
 
+> CloudLab users: see [CLOUDLAB.md](CLOUDLAB.md) for the tested d710 build,
+> three-node TPC-C configuration, and multi-node YCSB extension.
+
 *Caracal: Contention Management with Deterministic Concurrency Control* - SOSP'21 [Paper](https://dl.acm.org/doi/10.1145/3477132.3483591) [Slides](https://docs.google.com/presentation/d/1yTEkQ7fRucArBguChkD3p_b6TOoqPdAK_rfSb7DBwog/edit?usp=sharing) [Talk](https://youtu.be/QZ8sMvck654) [Long Talk](https://youtu.be/NUWl4dSfA1c)
 
 Build
@@ -145,4 +148,3 @@ Test
 ----
 
 FIXME: Unit tests are broken now. You may skip this section.
-
