@@ -110,10 +110,33 @@ curl -X POST http://CONTROLLER_IP:8666/broadcast/ \
   -d '{"type":"status_change","status":"exiting"}'
 ```
 
+## SmallBank mixed workload
+
+The `ashley-smallbank-caracal` branch adds the six-procedure SmallBank
+workload used by the replicated-state-machine paper. Build the branch with
+the non-PIE command above, then run one process per database node:
+
+```bash
+sudo prlimit --memlock=unlimited:unlimited -- \
+  ./debug/db -c CONTROLLER_IP:3148 -n host1 -w smallbank \
+  -Xcpu8 -Xmem4G -XMaxNodeLimit3 -XEpochQueueLength2M \
+  -XMajorGCThreshold10K -XSmallBankCustomers1000 \
+  -XSmallBankInput/REMOTE_PATH/smallbank-input.csv \
+  -XEpochSize10000 -XNrEpoch21
+```
+
+Use the same input and initial state on every replica. The workload covers
+Amalgamate, Balance, DepositChecking, SendPayment, TransactSavings, and
+WriteCheck. Each node writes `<input>.final.csv` at completion for serial
+replay and replica-to-replica comparison.
+
 ## Measurement limits
 
 The timed path is in-memory deterministic execution. It excludes initial data
 loading and transaction generation and does not include consensus, WAL,
 `fsync`, durable commit, or recovery. Reported latency is epoch/batch latency,
-not client-observed per-transaction latency. SmallBank is not implemented in
-this revision, and no valid distributed 4M result was produced on d710.
+not client-observed per-transaction latency. SmallBank is available on the
+`ashley-smallbank-caracal` branch. Its final-state output validates the tested
+input; it does not by itself establish arbitrary-workload serializability,
+durability, consensus, or failure recovery. No valid distributed 4M result
+was produced on d710.
