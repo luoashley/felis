@@ -62,6 +62,9 @@ struct Options {
   static inline const auto kMajorGCThreshold = Option("MajorGCThreshold");
   static inline const auto kMajorGCLazy = Option("LazyMajorGC", false);
   static inline const auto kEpochQueueLength = Option("EpochQueueLength");
+  static inline const auto kSmallBankInput = Option("SmallBankInput");
+  static inline const auto kSmallBankCustomers = Option("SmallBankCustomers");
+  static inline const auto kSmallBankInitialState = Option("SmallBankInitialState");
   static inline const auto kVHandleLockElision = Option("VHandleLockElision", false);
   static inline const auto kVHandleBatchAppend = Option("VHandleBatchAppend", false);
   static inline const auto kEnablePartition = Option("EnablePartition", false);

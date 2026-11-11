@@ -156,6 +156,7 @@ class EpochClient {
   LocalityManager &get_contention_locality_manager() { return cont_lmgr; }
 
   virtual unsigned int LoadPercentage() = 0;
+  virtual void OnWorkloadComplete() {}
   unsigned long NumberOfTxns() {
     // return LoadPercentage() * kTxnPerEpoch / 100;
     return g_txn_per_epoch;

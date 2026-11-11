@@ -504,6 +504,7 @@ void EpochClient::OnExecuteComplete()
     logger->info("Throughput {} txn/s", thr);
     logger->info("Insert / Initialize / Execute {} ms {} ms {} ms",
                  stats.insert_time_ms, stats.initialize_time_ms, stats.execution_time_ms);
+    OnWorkloadComplete();
     mem::PrintMemStats();
     mem::GetDataRegion().PrintUsageEachClass();
 
