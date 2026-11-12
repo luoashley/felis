@@ -259,11 +259,15 @@ void Client::OnWorkloadComplete() {
   output << "customer_id,savings,checking\n";
 
   auto &table = util::Instance<TableManager>().Get<Accounts>();
+  auto &conf = util::Instance<NodeConfiguration>();
+  auto node_index = static_cast<uint64_t>(conf.node_id() - 1);
+  auto node_start = node_index * Client::g_customer_count / conf.nr_nodes();
+  auto node_end = (node_index + 1) * Client::g_customer_count / conf.nr_nodes();
   void *buffer = alloca(128);
   uint64_t rows = 0;
   int64_t total_savings = 0;
   int64_t total_checking = 0;
-  for (uint64_t customer = 1; customer <= g_customer_count; customer++) {
+  for (uint64_t customer = node_start + 1; customer <= node_end; customer++) {
     Accounts::Key key;
     key.sb_customer_id = customer;
     auto handle = table.Search(key.EncodeView(buffer));
@@ -289,6 +293,11 @@ void Loader::Run() {
   auto &table = manager.Get<Accounts>();
   void *buffer = alloca(128);
 
+  auto &conf = util::Instance<NodeConfiguration>();
+  auto node_index = static_cast<uint64_t>(conf.node_id() - 1);
+  auto node_start = node_index * Client::g_customer_count / conf.nr_nodes();
+  auto node_end = (node_index + 1) * Client::g_customer_count / conf.nr_nodes();
+
   auto insert = [&](uint64_t customer, int64_t savings, int64_t checking) {
     Accounts::Key key;
     key.sb_customer_id = customer;
@@ -300,7 +309,7 @@ void Loader::Run() {
   };
 
   if (Client::g_initial_state_path.empty()) {
-    for (uint64_t customer = 1; customer <= Client::g_customer_count; customer++) {
+    for (uint64_t customer = node_start + 1; customer <= node_end; customer++) {
       insert(customer, 1000, 1000);
     }
     done = true;
@@ -331,7 +340,8 @@ void Loader::Run() {
     abort_if(savings < 0 || checking < 0,
              "SmallBank initial state has negative balance for customer {}",
              customer);
-    insert(customer, savings, checking);
+    if (customer > node_start && customer <= node_end)
+      insert(customer, savings, checking);
     expected_customer++;
   }
   abort_if(expected_customer != Client::g_customer_count + 1,

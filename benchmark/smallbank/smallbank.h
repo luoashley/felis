@@ -57,6 +57,18 @@ class Client : public felis::EpochClient {
   static std::string g_input_path;
   static std::string g_initial_state_path;
 
+  // Map the zero-based customer range to the same half-open node ranges used
+  // by the loader.  Returning a stable node for every key is required by
+  // TxnIndexLookup; routing every account to node 1 leaves remote replicas
+  // without a local handle.
+  static int NodeForCustomer(uint64_t customer) {
+    auto &conf = util::Instance<felis::NodeConfiguration>();
+    auto zero_based = customer - 1;
+    auto node = static_cast<int>(
+        (zero_based * conf.nr_nodes()) / g_customer_count);
+    return std::min(node, conf.nr_nodes() - 1);
+  }
+
   unsigned int LoadPercentage() final override { return 100; }
   felis::BaseTxn *CreateTxn(uint64_t serial_id) final override;
   void OnWorkloadComplete() final override;
@@ -74,7 +86,7 @@ class Loader : public go::Routine {
 
 namespace felis {
 using namespace smallbank;
-SHARD_TABLE(Accounts) { return 0; }
+SHARD_TABLE(Accounts) { return Client::NodeForCustomer(key.sb_customer_id); }
 }
 
 #endif
