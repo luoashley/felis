@@ -1,3 +1,23 @@
+# Caracal / Felis — CloudLab research fork
+
+This repository extends the upstream C++ implementation of **Caracal: Contention Management with Deterministic Concurrency Control** (SOSP 2021) for reproducible experiments on CloudLab d710 machines.
+
+## My contributions
+
+- **CloudLab d710 adaptation:** fixed NUMA slab initialization with ceiling division so an 8-core d710 initializes a usable slab.
+- **Non-PIE distributed builds:** added a repeatable build path for cross-node routine-address compatibility; PIE and ASLR can otherwise invalidate routine addresses transmitted between processes.
+- **Multi-node YCSB:** range-partitioned the table across database nodes and routed index lookups and transaction pieces to the owning node; added runtime dataset sizing with `-XYcsbTableSize`.
+- **Reproducible experiments:** documented three-node TPC-C and YCSB configurations, exact transaction counts, memory and queue settings, and the external controller version.
+- **Dependency repair:** pinned Masstree to an available commit so the submodule can be checked out again.
+
+See [CLOUDLAB.md](CLOUDLAB.md) for setup, tested commands, experiment scales, and measurement limits. Build helpers and a controller configuration template are in [cloudlab/](cloudlab/).
+
+**Attribution:** Caracal/Felis and its core algorithms are upstream research. My work in this fork focuses on platform adaptation, distributed execution, benchmarking, and reproducibility. The external controller was not modified.
+
+**Benchmark scope:** the documented timed path measures in-memory deterministic execution and excludes consensus, WAL, fsync, durable commit, and recovery. Epoch/batch latency is not client-observed transaction latency.
+
+---
+
 # Papers
 
 > CloudLab users: see [CLOUDLAB.md](CLOUDLAB.md) for the tested d710 build,
